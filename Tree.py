@@ -289,19 +289,152 @@ plt.show()
 
 ### 4. Boosting
 
+# Import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier
 
+# Import AdaBoostClassifier
+from sklearn.ensemble import AdaBoostClassifier
 
+# Instantiate dt
+dt = DecisionTreeClassifier(max_depth=2, random_state=1)
 
+# Instantiate ada
+ada = AdaBoostClassifier(base_estimator=dt, n_estimators=180, random_state=1)
 
+# Fit ada to the training set
+ada.fit(X_train, y_train)
 
+# Compute the probabilities of obtaining the positive class
+y_pred_proba = ada.predict_proba(X_test)[:,1]
 
+# Import roc_auc_score
+from sklearn.metrics import roc_auc_score
 
+# Evaluate test-set roc_auc_score
+ada_roc_auc = roc_auc_score(y_test, y_pred_proba)
 
+# Print roc_auc_score
+print('ROC AUC score: {:.2f}'.format(ada_roc_auc))
 
+# Import GradientBoostingRegressor
+from sklearn.ensemble import GradientBoostingRegressor
 
+# Instantiate gb
+gb = GradientBoostingRegressor(max_depth=4, 
+            n_estimators=200,
+            random_state=2)
 
+# Fit gb to the training set
+gb.fit(X_train, y_train)
 
+# Predict test set labels
+y_pred = gb.predict(X_test)
 
+# Import mean_squared_error as MSE
+from sklearn.metrics import mean_squared_error as MSE
 
+# Compute MSE
+mse_test = MSE(y_test, y_pred)
 
+# Compute RMSE
+rmse_test = mse_test ** (.5)
+
+# Print RMSE
+print('Test set RMSE of gb: {:.3f}'.format(rmse_test))
+
+# Import GradientBoostingRegressor
+from sklearn.ensemble import GradientBoostingRegressor
+
+# Instantiate sgbr
+sgbr = GradientBoostingRegressor(max_depth=4, 
+            subsample=.9,
+            max_features=.75,
+            n_estimators=200,                                
+            random_state=2)
+
+# Fit sgbr to the training set
+sgbr.fit(X_train, y_train)
+
+# Predict test set labels
+y_pred = sgbr.predict(X_test)
+
+# Import mean_squared_error as MSE
+from sklearn.metrics import mean_squared_error as MSE
+
+# Compute test set MSE
+mse_test = MSE(y_test, y_pred)
+
+# Compute test set RMSE
+rmse_test = mse_test ** (.5)
+
+# Print rmse_test
+print('Test set RMSE of sgbr: {:.3f}'.format(rmse_test))
+
+#######################
+
+### 5. Model Tuning
+
+# Define params_dt
+params_dt = {
+             'max_depth': [2, 3, 4],
+             'min_samples_leaf': [0.12, 0.14, 0.16, 0.18]
+            }
+
+# Import GridSearchCV
+from sklearn.model_selection import GridSearchCV
+
+# Instantiate grid_dt
+grid_dt = GridSearchCV(estimator=dt,
+                       param_grid=params_dt,
+                       scoring="roc_auc",
+                       cv=5,
+                       n_jobs=-1)
+
+# Import roc_auc_score from sklearn.metrics 
+from sklearn.metrics import roc_auc_score
+
+# Extract the best estimator
+best_model = grid_dt.best_estimator_
+
+# Predict the test set probabilities of the positive class
+y_pred_proba = best_model.predict_proba(X_test)[:,1]
+
+# Compute test_roc_auc
+test_roc_auc = roc_auc_score(y_test, y_pred_proba)
+
+# Print test_roc_auc
+print('Test set ROC AUC score: {:.3f}'.format(test_roc_auc))
+
+# Define the dictionary 'params_rf'
+params_rf = {
+    'n_estimators': [100, 350, 500],
+    'max_features': ['log2', 'auto', 'sqrt'],
+    'min_samples_leaf': [2, 10, 30]
+}
+
+# Import GridSearchCV
+from sklearn.model_selection import GridSearchCV
+
+# Instantiate grid_rf
+grid_rf = GridSearchCV(estimator=rf,
+                       param_grid=params_rf,
+                       scoring="neg_mean_squared_error",
+                       cv=3,
+                       verbose=1,
+                       n_jobs=-1)
+
+# Import mean_squared_error from sklearn.metrics as MSE 
+from sklearn.metrics import mean_squared_error as MSE
+
+# Extract the best estimator
+best_model = grid_rf.best_estimator_
+
+# Predict test set labels
+y_pred = best_model.predict(X_test)
+
+# Compute rmse_test
+rmse_test = MSE(y_test, y_pred)**(1/2)
+
+# Print rmse_test
+print('Test RMSE of best model: {:.3f}'.format(rmse_test)) 
 
