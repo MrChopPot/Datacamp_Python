@@ -74,18 +74,370 @@ plt.title('Average Spend by Monthly Cohorts')
 sns.heatmap(average_quantity, annot=True, cmap='Blues')
 plt.show()
 
+#######################
 
+### 2. Recency, Frequency, Monetary Value analysis
 
+# Create a spend quartile with 4 groups - a range between 1 and 5
+spend_quartile = pd.qcut(data['Spend'], q=4, labels=range(1,5))
 
+# Assign the quartile values to the Spend_Quartile column in data
+data['Spend_Quartile'] = spend_quartile
 
+# Print data with sorted Spend values
+print(data.sort_values("Spend"))
 
+# Store labels from 4 to 1 in a decreasing order
+r_labels = list(range(4, 0, -1))
 
+# Create a spend quartile with 4 groups and pass the previously created labels 
+recency_quartiles = pd.qcut(data['Recency_Days'], q=4, labels=r_labels)
 
+# Assign the quartile values to the Recency_Quartile column in `data`
+data['Recency_Quartile'] = recency_quartiles 
 
+# Print `data` with sorted Recency_Days values
+print(data.sort_values('Recency_Days'))
 
+# Calculate Recency, Frequency and Monetary value for each customer 
+datamart = online.groupby(['CustomerID']).agg({
+    'InvoiceDate': lambda x: (snapshot_date - x.max()).days,
+    'InvoiceNo': 'count',
+    'TotalSum': 'sum'})
 
+# Rename the columns 
+datamart.rename(columns={'InvoiceDate': 'Recency',
+                         'InvoiceNo': 'Frequency',
+                         'TotalSum': 'MonetaryValue'}, inplace=True)
 
+# Print top 5 rows
+print(datamart.head())
 
+# Calculate Recency, Frequency and Monetary value for each customer 
+datamart = online.groupby(['CustomerID']).agg({
+    'InvoiceDate': lambda x: (snapshot_date - x.max()).days,
+    'InvoiceNo': 'count',
+    'TotalSum': 'sum'})
 
+# Rename the columns 
+datamart.rename(columns={'InvoiceDate': 'Recency',
+                         'InvoiceNo': 'Frequency',
+                         'TotalSum': 'MonetaryValue'}, inplace=True)
 
+# Print top 5 rows
+print(datamart.head())
+
+# Create labels for Recency and Frequency
+r_labels = range(3, 0, -1); f_labels = range(1, 4)
+
+# Assign these labels to three equal percentile groups 
+r_groups = pd.qcut(datamart['Recency'], q=3, labels=r_labels)
+
+# Assign these labels to three equal percentile groups 
+f_groups = pd.qcut(datamart['Frequency'], q=3, labels=f_labels)
+
+# Create new columns R and F 
+datamart = datamart.assign(R=r_groups.values, F=f_groups.values)
+
+# Create labels for MonetaryValue
+m_labels = range(1, 4)
+
+# Assign these labels to three equal percentile groups 
+m_groups = pd.qcut(datamart['MonetaryValue'], q=3, labels=m_labels)
+
+# Create new column M
+datamart = datamart.assign(M=m_groups.values)
+
+# Calculate RFM_Score
+datamart['RFM_Score'] = datamart[['R','F','M']].sum(axis=1)
+print(datamart['RFM_Score'].head())
+
+# Define rfm_level function
+def rfm_level(df):
+    if df['RFM_Score'] >= 10:
+        return 'Top'
+    elif ((df['RFM_Score'] >= 6) and (df['RFM_Score'] < 10)):
+        return 'Middle'
+    else:
+        return 'Low'
+
+# Create a new variable RFM_Level
+datamart['RFM_Level'] = datamart.apply(rfm_level, axis=1)
+
+# Print the header with top 5 rows to the console
+print(datamart.head())
+
+# Calculate average values for each RFM_Level, and return a size of each segment 
+rfm_level_agg = datamart.groupby('RFM_Level').agg({
+    'Recency': 'mean',
+    'Frequency': 'mean',
+  
+    # Return the size of each segment
+    'MonetaryValue': ['mean', 'count']
+}).round(1)
+
+# Print the aggregated dataset
+print(rfm_level_agg)
+
+#######################
+
+### 3. Data pre-processing for clustering
+
+# Print the average values of the variables in the dataset
+print(data.mean())
+
+# Print the standard deviation of the variables in the dataset
+print(data.std())
+
+# Use `describe` function to get key statistics of the dataset
+print(data.describe())
+
+# Plot distribution of var1
+plt.subplot(3, 1, 1); sns.distplot(data['var1'])
+
+# Plot distribution of var2
+plt.subplot(3, 1, 2); sns.distplot(data['var2'])
+
+# Plot distribution of var3
+plt.subplot(3, 1, 3); sns.distplot(data['var3'])
+
+# Show the plot
+plt.show()
+
+# Apply log transformation to var2
+data['var2_log'] = np.log(data['var2'])
+
+# Apply log transformation to var3
+data['var3_log'] = np.log(data['var3'])
+
+# Create a subplot of the distribution of var2_log
+plt.subplot(2, 1, 1); sns.distplot(data['var2_log'])
+
+# Create a subplot of the distribution of var3_log
+plt.subplot(2, 1, 2); sns.distplot(data['var3_log'])
+
+# Show the plot
+plt.show()
+
+# Center the data by subtracting average values from each entry
+data_centered = data - data.mean()
+
+# Scale the data by dividing each entry by standard deviation
+data_scaled = data / data.std()
+
+# Normalize the data by applying both centering and scaling
+data_normalized = (data - data.mean()) / data.std()
+
+# Print summary statistics to make sure average is zero and standard deviation is one
+print(data_normalized.describe().round(2))
+
+# Initialize a scaler
+scaler = StandardScaler()
+
+# Fit the scaler
+scaler.fit(data)
+
+# Scale and center the data
+data_normalized = scaler.transform(data)
+
+# Create a pandas DataFrame
+data_normalized = pd.DataFrame(data_normalized, index=data.index, columns=data.columns)
+
+# Print summary statistics
+print(data_normalized.describe().round(2))
+
+# Plot recency distribution
+plt.subplot(3, 1, 1); sns.distplot(datamart_rfm['Recency'])
+
+# Plot frequency distribution
+plt.subplot(3, 1, 2); sns.distplot(datamart_rfm['Frequency'])
+
+# Plot monetary value distribution
+plt.subplot(3, 1, 3); sns.distplot(datamart_rfm['MonetaryValue'])
+
+# Show the plot
+plt.show()
+
+# Unskew the data
+datamart_log = np.log(datamart_rfm)
+
+# Initialize a standard scaler and fit it
+scaler = StandardScaler()
+scaler.fit(datamart_log)
+
+# Scale and center the data
+datamart_normalized = scaler.transform(datamart_log)
+
+# Create a pandas DataFrame
+datamart_normalized = pd.DataFrame(data=datamart_normalized, index=datamart_rfm.index, columns=datamart_rfm.columns)
+
+# Plot recency distribution
+plt.subplot(3, 1, 1); sns.distplot(datamart_normalized['Recency'])
+
+# Plot frequency distribution
+plt.subplot(3, 1, 2); sns.distplot(datamart_normalized['Frequency'])
+
+# Plot monetary value distribution
+plt.subplot(3, 1, 3); sns.distplot(datamart_normalized['MonetaryValue'])
+
+# Show the plot
+plt.show()
+
+#######################
+
+### 4. Customer Segmentation with K-means
+
+# Import KMeans 
+from sklearn.cluster import KMeans
+
+# Initialize KMeans
+kmeans = KMeans(n_clusters=3, random_state=1) 
+
+# Fit k-means clustering on the normalized data set
+kmeans.fit(datamart_normalized)
+
+# Extract cluster labels
+cluster_labels = kmeans.labels_
+
+# Create a DataFrame by adding a new cluster label column
+datamart_rfm_k3 = datamart_rfm.assign(Cluster=cluster_labels)
+
+# Group the data by cluster
+grouped = datamart_rfm_k3.groupby(['Cluster'])
+
+# Calculate average RFM values and segment sizes per cluster value
+grouped.agg({
+    'Recency': 'mean',
+    'Frequency': 'mean',
+    'MonetaryValue': ['mean', 'count']
+  }).round(1)
+
+# Fit KMeans and calculate SSE for each k
+sse = {}
+for k in range(1, 21):
+  
+    # Initialize KMeans with k clusters
+    kmeans = KMeans(n_clusters=k, random_state=1)
+    
+    # Fit KMeans on the normalized dataset
+    kmeans.fit(data_normalized)
+    
+    # Assign sum of squared distances to k element of dictionary
+    sse[k] = kmeans.inertia_
+
+# Add the plot title "The Elbow Method"
+plt.title('The Elbow Method')
+
+# Add X-axis label "k"
+plt.xlabel('k')
+
+# Add Y-axis label "SSE"
+plt.ylabel('SSE')
+
+# Plot SSE values for each key in the dictionary
+sns.pointplot(x=list(sse.keys()), y=list(sse.values()))
+plt.show()
+
+# Melt the normalized dataset and reset the index
+datamart_melt = pd.melt(
+                    datamart_normalized.reset_index(), 
+                        
+# Assign CustomerID and Cluster as ID variables
+                    id_vars=['CustomerID', 'Cluster'],
+
+# Assign RFM values as value variables
+                    value_vars=['Recency', 'Frequency', 'MonetaryValue'], 
+                        
+# Name the variable and value
+                    var_name='Metric', value_name='Value'
+                    )
+
+# Add the plot title
+plt.title('Snake plot of normalized variables')
+
+# Add the x axis label
+plt.xlabel('Metric')
+
+# Add the y axis label
+plt.ylabel('Value')
+
+# Plot a line for each value of the cluster variable
+sns.lineplot(data=datamart_melt, x='Metric', y='Value', hue='Cluster')
+plt.show()
+
+# Calculate average RFM values for each cluster
+cluster_avg = datamart_rfm_k3.groupby(['Cluster']).mean() 
+
+# Calculate average RFM values for the total customer population
+population_avg = datamart_rfm.mean()
+
+# Calculate relative importance of cluster's attribute value compared to population
+relative_imp = cluster_avg / population_avg - 1
+
+# Print relative importance scores rounded to 2 decimals
+print(relative_imp.round(2))
+
+# Initialize a plot with a figure size of 8 by 2 inches 
+plt.figure(figsize=(8, 2))
+
+# Add the plot title
+plt.title('Relative importance of attributes')
+
+# Plot the heatmap
+sns.heatmap(data=relative_imp, annot=True, fmt='.2f', cmap='RdYlGn')
+plt.show()
+
+# Import StandardScaler 
+from sklearn.preprocessing import StandardScaler
+
+# Apply log transformation
+datamart_rfmt_log = np.log(datamart_rfmt)
+
+# Initialize StandardScaler and fit it 
+scaler = StandardScaler(); scaler.fit(datamart_rfmt_log)
+
+# Transform and store the scaled data as datamart_rfmt_normalized
+datamart_rfmt_normalized = scaler.transform(datamart_rfmt_log)
+
+# Fit KMeans and calculate SSE for each k between 1 and 10
+for k in range(1, 11):
+  
+    # Initialize KMeans with k clusters and fit it 
+    kmeans = KMeans(n_clusters=k, random_state=1).fit(datamart_rfmt_normalized)
+    
+    # Assign sum of squared distances to k element of the sse dictionary
+    sse[k] = kmeans.inertia_  
+
+# Add the plot title, x and y axis labels
+plt.title('The Elbow Method'); plt.xlabel('k'); plt.ylabel('SSE')
+
+# Plot SSE values for each k stored as keys in the dictionary
+sns.pointplot(x=list(sse.keys()), y=list(sse.values()))
+plt.show()
+
+# Import KMeans 
+from sklearn.cluster import KMeans
+
+# Initialize KMeans
+kmeans = KMeans(n_clusters=4, random_state=1) 
+
+# Fit k-means clustering on the normalized data set
+kmeans.fit(datamart_rfmt_normalized)
+
+# Extract cluster labels
+cluster_labels = kmeans.labels_
+
+# Create a new DataFrame by adding a cluster label column to datamart_rfmt
+datamart_rfmt_k4 = datamart_rfmt.assign(Cluster=cluster_labels)
+
+# Group by cluster
+grouped = datamart_rfmt_k4.groupby(['Cluster'])
+
+# Calculate average RFMT values and segment sizes for each cluster
+grouped.agg({
+    'Recency': 'mean',
+    'Frequency': 'mean',
+    'MonetaryValue': 'mean',
+    'Tenure': ['mean', 'count']
+  }).round(1)
 
