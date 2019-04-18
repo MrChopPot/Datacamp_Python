@@ -365,30 +365,393 @@ show(p)
 
 ### 3. Building interactive apps with Bokeh
 
+# Perform necessary imports
+from bokeh.io import curdoc
+from bokeh.plotting import figure
+
+# Create a new plot: plot
+plot = figure()
+
+# Add a line to the plot
+plot.line(x = [1,2,3,4,5], y = [2,5,4,6,7])
+
+# Add the plot to the current document
+curdoc().add_root(plot)
+
+# Perform the necessary imports
+from bokeh.io import curdoc
+from bokeh.layouts import widgetbox
+from bokeh.models import Slider
+
+# Create a slider: slider
+slider = Slider(title='my slider', start=0, end=10, step=0.1, value=2)
+
+# Create a widgetbox layout: layout
+layout = widgetbox(slider)
+
+# Add the layout to the current document
+curdoc().add_root(layout)
+
+# Perform necessary imports
+from bokeh.io import curdoc
+from bokeh.layouts import widgetbox
+from bokeh.models import Slider
+
+# Create first slider: slider1
+slider1 = Slider(title = 'slider1', start = 0, end = 10, step = 0.1, value = 2)
+
+# Create second slider: slider2
+slider2 = Slider(title = 'slider2', start = 10, end = 100, step = 1, value = 20)
+
+# Add slider1 and slider2 to a widgetbox
+layout = widgetbox(slider1, slider2)
+
+# Add the layout to the current document
+curdoc().add_root(layout)
+
+# Create ColumnDataSource: source
+source = ColumnDataSource(data = {'x': x, 'y': y})
+
+# Add a line to the plot
+plot.line('x', 'y', source=source)
+
+# Create a column layout: layout
+layout = column(widgetbox(slider), plot)
+
+# Add the layout to the current document
+curdoc().add_root(layout)
+
+# Define a callback function: callback
+def callback(attr, old, new):
+
+    # Read the current value of the slider: scale
+    scale = slider.value
+
+    # Compute the updated y using np.sin(scale/x): new_y
+    new_y = np.sin(scale/x)
+
+    # Update source with the new data values
+    source.data = {'x': x, 'y': new_y}
+
+# Attach the callback to the 'value' property of slider
+slider.on_change('value', callback)
+
+# Create layout and add to current document
+layout = column(widgetbox(slider), plot)
+curdoc().add_root(layout)
+
+# Perform necessary imports
+from bokeh.models import ColumnDataSource, Select
+
+# Create ColumnDataSource: source
+source = ColumnDataSource(data={
+    'x' : fertility,
+    'y' : female_literacy
+})
+
+# Create a new plot: plot
+plot = figure()
+
+# Add circles to the plot
+plot.circle('x', 'y', source=source)
+
+# Define a callback function: update_plot
+def update_plot(attr, old, new):
+    # If the new Selection is 'female_literacy', update 'y' to female_literacy
+    if new == 'female_literacy': 
+        source.data = {
+            'x' : fertility,
+            'y' : female_literacy
+        }
+    # Else, update 'y' to population
+    else:
+        source.data = {
+            'x' : fertility,
+            'y' : population
+        }
+
+# Create a dropdown Select widget: select    
+select = Select(title="distribution", options=['female_literacy', 'population'], value='female_literacy')
+
+# Attach the update_plot callback to the 'value' property of select
+select.on_change('value', update_plot)
+
+# Create layout and add to current document
+layout = row(select, plot)
+curdoc().add_root(layout)
+
+# Create two dropdown Select widgets: select1, select2
+select1 = Select(title='First', options=['A', 'B'], value='A')
+select2 = Select(title='Second', options=['1', '2', '3'], value='1')
+
+# Define a callback function: callback
+def callback(attr, old, new):
+    # If select1 is 'A' 
+    if select1.value == 'A':
+        # Set select2 options to ['1', '2', '3']
+        select2.options = ['1', '2', '3']
+        
+        # Set select2 value to '1'
+        select2.value = '1'
+    else:
+        # Set select2 options to ['100', '200', '300']
+        select2.options = ['100', '200', '300']
+        
+        # Set select2 value to '100'
+        select2.value = '100'
+
+# Attach the callback to the 'value' property of select1
+select1.on_change('value', callback)
+
+# Create layout and add to current document
+layout = widgetbox(select1, select2)
+curdoc().add_root(layout)
+
+# Create a Button with label 'Update Data'
+button = Button(label = 'Update Data')
+
+# Define an update callback with no arguments: update
+def update():
+
+    # Compute new y values: y
+    y = np.sin(x) + np.random.random(N)
+
+    # Update the ColumnDataSource data dictionary
+    source.data = {'x': x, 'y': y}
+
+# Add the update callback to the button
+button.on_click(update)
+
+# Create layout and add to current document
+layout = column(widgetbox(button), plot)
+curdoc().add_root(layout)
+
+# Import CheckboxGroup, RadioGroup, Toggle from bokeh.models
+from bokeh.models import CheckboxGroup, RadioGroup, Toggle
+
+# Add a Toggle: toggle
+toggle = Toggle(button_type = 'success', label = 'Toggle button')
+
+# Add a CheckboxGroup: checkbox
+checkbox = CheckboxGroup(labels=['Option 1', 'Option 2', 'Option 3'])
+
+# Add a RadioGroup: radio
+radio = RadioGroup(labels=['Option 1', 'Option 2', 'Option 3'])
+
+# Add widgetbox(toggle, checkbox, radio) to the current document
+curdoc().add_root(widgetbox(toggle, checkbox, radio))
+
+#######################
+
+### 4. Putting It All Together! A Case Study
+
+# Perform necessary imports
+from bokeh.io import output_file, show
+from bokeh.plotting import figure
+from bokeh.models import HoverTool, ColumnDataSource
+
+# Make the ColumnDataSource: source
+source = ColumnDataSource(data={
+    'x'       : data.loc[1970].fertility,
+    'y'       : data.loc[1970].life,
+    'country' : data.loc[1970].Country,
+})
+
+# Create the figure: p
+p = figure(title='1970', x_axis_label='Fertility (children per woman)', y_axis_label='Life Expectancy (years)',
+           plot_height=400, plot_width=700,
+           tools=[HoverTool(tooltips='@country')])
+
+# Add a circle glyph to the figure p
+p.circle(x='x', y='y', source=source)
+
+# Output the file and show the figure
+output_file('gapminder.html')
+show(p)
+
+# Import the necessary modules
+from bokeh.io import curdoc
+from bokeh.models import ColumnDataSource
+from bokeh.plotting import figure
+
+# Make the ColumnDataSource: source
+source = ColumnDataSource(data ={
+    'x'       : data.loc[1970].fertility,
+    'y'       : data.loc[1970].life,
+    'country' : data.loc[1970].Country,
+    'pop'     : (data.loc[1970].population / 20000000) + 2,
+    'region'  : data.loc[1970].region,
+})
+
+# Save the minimum and maximum values of the fertility column: xmin, xmax
+xmin, xmax = min(data.fertility), max(data.fertility)
+
+# Save the minimum and maximum values of the life expectancy column: ymin, ymax
+ymin, ymax = min(data.life), max(data.life)
+
+# Create the figure: plot
+plot = figure(title='Gapminder Data for 1970', plot_height=400, plot_width=700, x_range=(xmin, xmax), y_range=(ymin, ymax))
+
+# Add circle glyphs to the plot
+plot.circle(x='x', y='y', fill_alpha=.8, source=source)
+
+# Set the x-axis label
+plot.xaxis.axis_label ='Fertility (children per woman)'
+
+# Set the y-axis label
+plot.yaxis.axis_label = 'Life Expectancy (years)'
+
+# Add the plot to the current document and add a title
+curdoc().add_root(plot)
+curdoc().title = 'Gapminder'
+
+# Make a list of the unique values from the region column: regions_list
+regions_list = data.region.unique().tolist()
+
+# Import CategoricalColorMapper from bokeh.models and the Spectral6 palette from bokeh.palettes
+from bokeh.models import CategoricalColorMapper
+from bokeh.palettes import Spectral6
+
+# Make a color mapper: color_mapper
+color_mapper = CategoricalColorMapper(factors=regions_list, palette=Spectral6)
+
+# Add the color mapper to the circle glyph
+plot.circle(x='x', y='y', fill_alpha=0.8, source=source,
+            color=dict(field='region', transform=color_mapper), legend='region')
+
+# Set the legend.location attribute of the plot to 'top_right'
+plot.legend.location = 'top_right'
+
+# Add the plot to the current document and add the title
+curdoc().add_root(plot)
+curdoc().title = 'Gapminder'
+
+# Import the necessary modules
+from bokeh.layouts import widgetbox, row
+from bokeh.models import Slider
+
+# Define the callback function: update_plot
+def update_plot(attr, old, new):
+    # Set the yr name to slider.value and new_data to source.data
+    yr = slider.value
+    new_data = {
+        'x'       : data.loc[yr].fertility,
+        'y'       : data.loc[yr].life,
+        'country' : data.loc[yr].Country,
+        'pop'     : (data.loc[yr].population / 20000000) + 2,
+        'region'  : data.loc[yr].region,
+    }
+    source.data = new_data
 
 
+# Make a slider object: slider
+slider = Slider(start = 1970, end = 2010, step = 1, value = 1970, title = 'Year')
 
+# Attach the callback to the 'value' property of slider
+slider.on_change('value', update_plot)
 
+# Make a row layout of widgetbox(slider) and plot and add it to the current document
+layout = row(widgetbox(slider), plot)
+curdoc().add_root(layout)
 
+# Define the callback function: update_plot
+def update_plot(attr, old, new):
+    # Assign the value of the slider: yr
+    yr = slider.value
+    # Set new_data
+    new_data = {
+        'x'       : data.loc[yr].fertility,
+        'y'       : data.loc[yr].life,
+        'country' : data.loc[yr].Country,
+        'pop'     : (data.loc[yr].population / 20000000) + 2,
+        'region'  : data.loc[yr].region,
+    }
+    # Assign new_data to: source.data
+    source.data = new_data
 
+    # Add title to figure: plot.title.text
+    plot.title.text = 'Gapminder data for %d' % yr
 
+# Make a slider object: slider
+slider = Slider(start = 1970, end = 2010, step = 1, value = 1970, title = 'Year')
 
+# Attach the callback to the 'value' property of slider
+slider.on_change('value', update_plot)
 
+# Make a row layout of widgetbox(slider) and plot and add it to the current document
+layout = row(widgetbox(slider), plot)
+curdoc().add_root(layout)
 
+# Import HoverTool from bokeh.models
+from bokeh.models import HoverTool
 
+# Create a HoverTool: hover
+hover = HoverTool(tooltips=[('Country', '@country')])
 
+# Add the HoverTool to the plot
+plot.add_tools(hover)
 
+# Create layout: layout
+layout = row(widgetbox(slider), plot)
 
+# Add layout to current document
+curdoc().add_root(layout)
 
+# Define the callback: update_plot
+def update_plot(attr, old, new):
+    # Read the current value off the slider and 2 dropdowns: yr, x, y
+    yr = slider.value
+    x = x_select.value
+    y = y_select.value
+    # Label axes of plot
+    plot.xaxis.axis_label = x
+    plot.yaxis.axis_label = y
+    # Set new_data
+    new_data = {
+        'x'       : data.loc[yr][x],
+        'y'       : data.loc[yr][y],
+        'country' : data.loc[yr].Country,
+        'pop'     : (data.loc[yr].population / 20000000) + 2,
+        'region'  : data.loc[yr].region,
+    }
+    # Assign new_data to source.data
+    source.data = new_data
 
+    # Set the range of all axes
+    plot.x_range.start = min(data[x])
+    plot.x_range.end = max(data[x])
+    plot.y_range.start = min(data[y])
+    plot.y_range.end = max(data[y])
 
+    # Add title to plot
+    plot.title.text = 'Gapminder data for %d' % yr
 
+# Create a dropdown slider widget: slider
+slider = Slider(start=1970, end=2010, step=1, value=1970, title='Year')
 
+# Attach the callback to the 'value' property of slider
+slider.on_change('value', update_plot)
 
+# Create a dropdown Select widget for the x data: x_select
+x_select = Select(
+    options=['fertility', 'life', 'child_mortality', 'gdp'],
+    value='fertility',
+    title='x-axis data'
+)
 
+# Attach the update_plot callback to the 'value' property of x_select
+x_select.on_change('value', update_plot)
 
+# Create a dropdown Select widget for the y data: y_select
+y_select = Select(
+    options=['fertility', 'life', 'child_mortality', 'gdp'],
+    value='life',
+    title='y-axis data'
+)
 
+# Attach the update_plot callback to the 'value' property of y_select
+y_select.on_change('value', update_plot)
 
-
-
-
+# Create layout and add to current document
+layout = row(widgetbox(slider, x_select, y_select), plot)
+curdoc().add_root(layout)
