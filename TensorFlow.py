@@ -95,6 +95,8 @@ L1 = matmul(L, b)
 L2 = reduce_sum(L1)
 print(L2.numpy())
 
+###########################
+
 ### 2. Linear Regression in TensorFlow
 
 # Import pandas under the alias pd
