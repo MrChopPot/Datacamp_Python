@@ -95,7 +95,7 @@ L1 = matmul(L, b)
 L2 = reduce_sum(L1)
 print(L2.numpy())
 
-###########################
+#######################
 
 ### 2. Linear Regression in TensorFlow
 
@@ -219,4 +219,142 @@ for batch in pd.read_csv('kc_house_data.csv', chunksize=100):
 
 # Print trained parameters
 print(intercept.numpy(), slope.numpy())
+
+#######################
+
+### 3. Neural Networks in TensorFlow
+
+# Define inputs as a 32-bit float
+inputs = array(borrower_features, float32)
+
+# Initialize weights as 10x3 variable of ones
+weights = Variable(ones((10, 3)))
+
+# Compute product of inputs and weights
+product = matmul(inputs, weights)
+
+# Apply sigmoid transformation
+dense = nn.sigmoid(product)
+
+# Compute the product of features and weights
+products = matmul(borrower_features, weights)
+
+# Apply a sigmoid activation function
+dense = nn.sigmoid(products)
+
+# Print products and dense tensors
+print(products.numpy())
+print(dense.numpy())
+
+# Define the first dense layer
+dense1 = keras.layers.Dense(7, activation='sigmoid')(inputs)
+
+# Define a dense layer with 3 output nodes
+dense2 = keras.layers.Dense(3, activation='sigmoid')(dense1)
+
+# Define a dense layer with 1 output node
+outputs = keras.layers.Dense(1, activation='sigmoid')(dense2)
+
+# Print dense layer 2
+print(dense2)
+
+# Construct input layer from features
+input_layer = constant(payments, float32)
+
+# Define first dense layer
+dense_layer_1 = keras.layers.Dense(3, activation='relu')(input_layer)
+
+# Define second dense layer
+dense_layer_2 = keras.layers.Dense(2, activation='relu')(dense_layer_1)
+
+# Define output layer
+output_layer = keras.layers.Dense(1, activation='sigmoid')(dense_layer_2)
+
+# Construct input layer from borrower features
+input_layer = constant(borrower_features, float32)
+
+# Define first dense layer
+dense_layer_1 = keras.layers.Dense(10, activation='sigmoid')(input_layer)
+
+# Define second dense layer
+dense_layer_2 = keras.layers.Dense(8, activation='relu')(dense_layer_1)
+
+# Define output layer
+output_layer = keras.layers.Dense(6, activation='softmax')(dense_layer_2)
+
+# Define optimization operation
+opt = keras.optimizers.SGD(0.001)
+
+for j in range(1000):
+    # Complete the minimization operation for initializer_1
+    opt.minimize(lambda: loss(initializer_1), var_list=[initializer_1])
+    # Complete the minimization operation for initializer_2
+    opt.minimize(lambda: loss(initializer_2), var_list=[initializer_2])
+
+# Print initializer_1 and initializer_2
+print(initializer_1.numpy(), initializer_2.numpy())
+
+# Define the optimization operation for opt_1
+opt_1 = keras.optimizers.RMSprop(learning_rate=0.001, momentum=0.0)
+
+# Define the optimization operation for opt_2
+opt_2 = keras.optimizers.RMSprop(learning_rate=0.001, momentum=0.99)
+
+for j in range(100):
+    opt_1.minimize(lambda: loss(momentum_1), var_list=[momentum_1])
+    # Define the minimization operation for opt_2
+    opt_2.minimize(lambda: loss(momentum_2), var_list=[momentum_2])
+
+# Print momentum 1 and momentum 2
+print(momentum_1.numpy(), momentum_2.numpy())
+
+# Define the layer 1 weights
+weights1 = Variable(random.normal([23,7]))
+
+# Initialize the layer 1 bias
+bias1 = Variable(ones([7]))
+
+# Define the layer 2 weights
+weights2 = Variable(random.normal([7,1]))
+
+# Define the layer 2 bias
+bias2 = Variable(0)
+
+def loss_function(weights1, bias1, weights2, bias2, features, targets):
+    # Apply relu activation functions to layer 1
+    layer1 = nn.relu(add(matmul(features, weights1), bias1))
+    # Apply dropout
+    dropout = keras.layers.Dropout(0.25)(layer1)
+    layer2 = nn.sigmoid(add(matmul(dropout, weights2), bias2))
+    # Pass targets and layers2 to the cross entropy loss
+    return keras.losses.binary_crossentropy(targets, layer2)
+
+for j in range(0, 30000, 2000):
+    features, targets = borrower_features[j:j+2000, :], default[j:j+2000, :]
+    # Complete the optimizer
+    opt.minimize(lambda: loss_function(weights1, bias1, weights2, bias2, features, targets), var_list=[weights1, bias1, weights2, bias2])
+    
+print(weights1.numpy())
+
+#######################
+
+### 4. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
