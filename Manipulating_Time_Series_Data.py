@@ -334,4 +334,283 @@ data['q90'] = rolling.quantile(.9).to_frame('q10')
 data.plot()
 plt.show()
 
+# Calculate differences
+differences = data.diff().dropna()
 
+# Select start price
+start_price = data.first('D')
+
+# Calculate cumulative sum
+cumulative_sum = start_price.append(differences).cumsum()
+
+# Validate cumulative sum equals data
+print(data.equals(cumulative_sum))
+
+# Define your investment
+investment = 1000
+
+# Calculate the daily returns here
+returns = data.pct_change()
+
+# Calculate the cumulative returns here
+returns_plus_one = returns + 1
+cumulative_return = returns_plus_one.cumprod()
+
+# Calculate and plot the investment return here 
+cumulative_return.mul(investment).plot()
+plt.show()
+
+# Import numpy
+import numpy as np
+
+# Define a multi_period_return function
+def multi_period_return(period_returns):
+    return np.prod(period_returns + 1) - 1
+    
+# Calculate daily returns
+daily_returns = data.pct_change()
+
+# Calculate rolling_annual_returns
+rolling_annual_returns = daily_returns.rolling('360D').apply(multi_period_return)
+
+# Plot rolling_annual_returns
+rolling_annual_returns.mul(100).plot()
+plt.show()
+
+# Set seed here
+seed = 42
+
+# Create random_walk
+random_walk = normal(loc=.001, scale=.01, size=2500)
+
+# Convert random_walk to pd.series
+random_walk = pd.Series(random_walk)
+
+# Create random_prices
+random_prices = (random_walk + 1).cumprod()
+
+# Plot random_prices here
+random_prices.mul(1000).plot()
+plt.show()
+
+# Set seed here
+seed = 42
+
+# Calculate daily_returns here
+daily_returns = fb.pct_change().dropna()
+
+# Get n_obs
+n_obs = daily_returns.count()
+
+# Create random_walk
+random_walk = choice(daily_returns, size=n_obs)
+
+# Convert random_walk to pd.series
+random_walk = pd.Series(random_walk)
+
+# Plot random_walk distribution
+sns.distplot(random_walk)
+plt.show()
+
+# Select fb start price here
+start = fb.price.first('D')
+
+# Add 1 to random walk and append to start
+random_walk = random_walk + 1
+random_price = start.append(random_walk)
+
+# Calculate cumulative product here
+random_price = random_price.cumprod()
+
+# Insert into fb and plot
+fb['random'] = random_price
+fb['random'].plot()
+plt.show()
+
+# Inspect data here
+print(data.info())
+
+# Calculate year-end prices here
+annual_prices = data.resample('A').last()
+
+# Calculate annual returns here
+annual_returns = annual_prices.pct_change()
+
+# Calculate and print the correlation matrix here
+correlations = annual_returns.corr()
+print(correlations)
+
+# Visualize the correlations as heatmap here
+sns.heatmap(correlations, annot=True)
+plt.show()
+
+#######################
+
+### 4. Putting it all together: Building a value-weighted index
+
+# Inspect listings
+print(listings.info())
+
+# Move 'stock symbol' into the index
+listings.set_index('Stock Symbol', inplace=True)
+
+# Drop rows with missing 'sector' data
+listings.dropna(subset=['Sector'], inplace=True)
+
+# Select companies with IPO Year before 2019
+listings = listings[listings['IPO Year']<2019]
+
+# Inspect the new listings data
+print(listings.info())
+
+# Show the number of companies per sector
+print(listings.groupby('Sector').size().sort_values(ascending=False))
+
+# Select largest company for each sector
+components = listings.groupby('Sector')['Market Capitalization'].nlargest(1)
+
+# Print components, sorted by market cap
+print(components.sort_values(ascending=False))
+
+# Select stock symbols and print the result
+tickers = components.index.get_level_values('Stock Symbol')
+print(tickers)
+
+# Print company name, market cap, and last price for each component 
+info_cols = ['Company Name', 'Market Capitalization', 'Last Sale']
+print(listings.loc[tickers, info_cols].sort_values('Market Capitalization', ascending=False))
+
+# Print tickers
+print(tickers)
+
+# Import prices and inspect result
+stock_prices = pd.read_csv('stock_prices.csv', parse_dates=['Date'], index_col='Date')
+print(stock_prices.info())
+
+# Calculate the returns    
+price_return = ((stock_prices.iloc[-1,] / stock_prices.iloc[0,]) - 1).mul(100)
+
+# Plot horizontal bar chart of sorted price_return   
+price_return.sort_values().plot(kind='barh', title='Stock Price Returns')
+plt.show()
+
+# Inspect listings and print tickers
+print(listings.info())
+print(tickers)
+
+# Select components and relevant columns from listings
+components = listings.loc[tickers,['Market Capitalization', 'Last Sale']]
+
+# Print the first rows of components
+print(components.head())
+
+# Calculate the number of shares here
+no_shares = components['Market Capitalization'].div(components['Last Sale'])
+
+# Print the sorted no_shares
+print(no_shares.sort_values(ascending=False))
+
+# Select the number of shares
+no_shares = components['Number of Shares']
+print(no_shares.sort_values())
+
+# Create the series of market cap per ticker
+market_cap = stock_prices * no_shares
+
+# Select first and last market cap here
+first_value = market_cap.first('D')
+last_value = market_cap.last('D')
+
+# Concatenate and plot first and last market cap here
+pd.concat([first_value, last_value], axis=1).plot(kind='barh')
+plt.show()
+
+# Aggregate and print the market cap per trading day
+raw_index = market_cap_series.sum(axis=1)
+print(raw_index)
+
+# Normalize the aggregate market cap here 
+index = raw_index.div(raw_index.iloc[0]).mul(100)
+print(index)
+
+# Plot the index here
+index.plot(title='Market-Cap Weighted Index')
+plt.show()
+
+# Calculate and print the index return here
+index_return = (index.iloc[-1] / index.iloc[0] - 1) * 100
+print(index_return)
+
+# Select the market capitalization
+market_cap = components['Market Capitalization']
+
+# Calculate the total market cap
+total_market_cap = market_cap.sum()
+
+# Calculate the component weights, and print the result
+weights = market_cap.div(total_market_cap)
+print(weights.sort_values())
+
+# Calculate and plot the contribution by component
+(weights.mul(index_return)).sort_values().plot(kind='barh')
+plt.show()
+
+# Convert index series to dataframe here
+data = index.to_frame('Index')
+
+# Normalize djia series and add as new column to data
+djia = djia.div(djia.iloc[0]).mul(100)
+data['DJIA'] = djia
+
+# Show total return for both index and djia
+print(data.iloc[-1].div(data.iloc[0]).sub(1).mul(100))
+
+# Plot both series
+data.plot()
+plt.show()
+
+# Inspect data
+print(data.info())
+print(data.head())
+
+# Create multi_period_return function here
+def multi_period_return(r):
+    return (np.prod(r + 1) - 1) * 100
+
+# Calculate rolling_return_360
+rolling_return_360 = data.pct_change().rolling('360D').apply(multi_period_return)
+
+# Plot rolling_return_360 here
+rolling_return_360.plot(title='Rolling 360D Return')
+plt.show()
+
+# Inspect stock_prices here
+print(stock_prices.info())
+
+# Calculate the daily returns
+returns = stock_prices.pct_change()
+
+# Calculate and print the pairwise correlations
+correlations = returns.corr()
+print(correlations)
+
+# Plot a heatmap of daily return correlations
+sns.heatmap(correlations, annot=True)
+plt.title('Daily Return Correlations')
+plt.show()
+
+# Inspect index and stock_prices
+print(index.info())
+print(stock_prices.info())
+
+# Join index to stock_prices, and inspect the result
+data = stock_prices.join(index)
+print(data.info())
+
+# Create index & stock price returns
+returns = data.pct_change()
+
+# Export data and data as returns to excel
+with pd.ExcelWriter('data.xls') as writer:
+    data.to_excel(writer, sheet_name='data')
+    returns.to_excel(writer, sheet_name='returns')
